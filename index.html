@@ -1285,9 +1285,11 @@ function renderUI() {
         p2rem = Math.max(0, Math.min(5, p2rem));
         dom.shipsStatus.innerHTML = `<span>${pn(0)}: ${'🟦'.repeat(p1rem)}${'⬛'.repeat(5-p1rem)}</span> <span>${pn(1)}: ${'🟧'.repeat(p2rem)}${'⬛'.repeat(5-p2rem)}</span>`;
         dom.placementBar.style.display = 'none';
+        var turnLabel = pn(tp) + "'s turn";
+        if (G.mode === 'online' && G.myIndex != null && tp === G.myIndex) turnLabel = 'Your turn';
         dom.boardLabel.textContent = isOwn
             ? `⚓ Your Fleet (${pn(tp)})`
-            : `🎯 Enemy Waters — Fire! (${pn(tp)}'s turn)`;
+            : `🎯 Enemy Waters — Fire! (${turnLabel})`;
         dom.boardLabel.style.color = isOwn ? '#4fc3f7' : '#ffa726';
     } else if (phase === 'gameover') {
         const gp = G.winner - 1;
@@ -1304,7 +1306,9 @@ function renderUI() {
     else if (phase === 'p2-place') dom.statusText.textContent = `${pn(1)}: Place your ships on the board.`;
     else if (phase === 'play') {
         const name = turn === 1 ? pn(0) : pn(1);
-        dom.statusText.innerHTML = `<span class="${turn === 1 ? 'highlight' : 'highlight-p2'}">${name}</span>'s turn — click enemy waters to fire!`;
+        var turnLabel2 = name + "'s turn";
+        if (G.mode === 'online' && G.myIndex != null && (turn - 1) === G.myIndex) turnLabel2 = 'Your turn';
+        dom.statusText.innerHTML = `<span class="${turn === 1 ? 'highlight' : 'highlight-p2'}">${turnLabel2}</span> — click enemy waters to fire!`;
     } else if (phase === 'gameover') {
         dom.statusText.innerHTML = `<span class="highlight">${pn(G.winner - 1)}</span> wins! All enemy ships destroyed!`;
     }
@@ -1925,8 +1929,8 @@ function handleOnlineFireResult(msg) {
     if (msg.hit) {
         if (isAttacker) {
             dom.statusText.innerHTML = msg.sunk
-                ? '<span style="color:#ce93d8;font-weight:700;">💀 Ship sunk!</span> ' + pn(me) + ' continues firing!'
-                : '<span style="color:#ef5350;font-weight:700;">💥 Hit!</span> ' + pn(me) + ' fires again!';
+                ? '<span style="color:#ce93d8;font-weight:700;">💀 Ship sunk!</span> You continue firing!'
+                : '<span style="color:#ef5350;font-weight:700;">💥 Hit!</span> You fire again!';
         } else {
             var coords = String.fromCharCode(65 + msg.row) + (msg.col + 1);
             soundHit();
@@ -1936,7 +1940,7 @@ function handleOnlineFireResult(msg) {
         }
     } else {
         if (isAttacker) {
-            dom.statusText.innerHTML = '💧 Splash! <span class="' + (me === 0 ? 'highlight' : 'highlight-p2') + '">' + pn(me) + '</span> fired at water.';
+            dom.statusText.innerHTML = '💧 Splash! You fired at water.';
         } else {
             soundMiss();
             dom.statusText.innerHTML = '<span style="color:#4fc3f7;">💨 Miss at ' + String.fromCharCode(65 + msg.row) + (msg.col + 1) + '.</span>';
