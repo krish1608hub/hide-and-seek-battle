@@ -1147,14 +1147,18 @@ function getViewedPlayer() {
     const showOwn = G.view === 'fleet';
     const attacker = G.turn - 1;
     const defender = attacker === 0 ? 1 : 0;
-    if (showOwn) return { pIdx: attacker, isOwn: true };
+    if (showOwn) {
+        const pIdx = G.mode === 'online' && G.myIndex != null ? G.myIndex : attacker;
+        return { pIdx, isOwn: true };
+    }
     return { pIdx: defender, isOwn: false };
 }
 
 function updateViewBtn() {
     if (G.phase === 'play') {
         dom.viewBtn.classList.add('active');
-        dom.viewBtn.textContent = G.view === 'fleet' ? '👁 View Enemy Waters' : '👁 View My Fleet';
+        var fleetLabel = G.mode === 'online' ? 'Your Fleet' : 'My Fleet';
+        dom.viewBtn.textContent = G.view === 'fleet' ? '👁 View Enemy Waters' : '👁 View ' + fleetLabel;
     } else {
         dom.viewBtn.classList.remove('active');
     }
