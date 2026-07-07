@@ -70,6 +70,7 @@ wss.on('connection', (ws) => {
           ready: [false, false],
           playerNames: ['', ''],
           stats: [{ hits: 0, misses: 0, shots: 0 }, { hits: 0, misses: 0, shots: 0 }],
+          rematch: [false, false],
           turn: 0,
           phase: 'waiting',
           winner: null,
@@ -193,17 +194,28 @@ wss.on('connection', (ws) => {
         break;
       }
 
-      case 'rematch': {
+      case 'rematch_request': {
+        if (!room || room.phase !== 'gameover') return;
+        room.rematch[player.index] = true;
+        if (room.rematch[0] && room.rematch[1]) {
+          room.phase = 'waiting';
+          room.ships = [null, null];
+          room.shots = [{}, {}];
+          room.ready = [false, false];
+          room.stats = [{ hits: 0, misses: 0, shots: 0 }, { hits: 0, misses: 0, shots: 0 }];
+          room.rematch = [false, false];
+          room.turn = 0;
+          room.winner = null;
+          room.players.forEach(p => send(p, { type: 'rematch_accepted' }));
+        } else {
+          room.players.forEach(p => send(p, { type: 'rematch_status', wants: room.rematch }));
+        }
+        break;
+      }
+      case 'rematch_decline': {
         if (!room) return;
-        if (room.phase !== 'gameover') return;
-        room.phase = 'waiting';
-        room.ships = [null, null];
-        room.shots = [{}, {}];
-        room.ready = [false, false];
-        room.stats = [{ hits: 0, misses: 0, shots: 0 }, { hits: 0, misses: 0, shots: 0 }];
-        room.turn = 0;
-        room.winner = null;
-        room.players.forEach(p => send(p, { type: 'rematch_accepted' }));
+        room.rematch = [false, false];
+        room.players.forEach(p => send(p, { type: 'rematch_status', wants: [false, false] }));
         break;
       }
 

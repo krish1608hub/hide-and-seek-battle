@@ -747,7 +747,10 @@ body::before {
             <span id="prizeCode" style="font-size:1.2rem;font-weight:700;color:#ffd54f;">SEA-WARRIOR-2024</span><br>
             <small style="opacity:0.5;">You are the master of the seas!</small>
         </div>
-        <button class="btn btn-primary" id="playAgainBtn" style="margin-top:4px;">Play Again</button>
+        <div id="rematchBtns" style="display:flex;gap:8px;justify-content:center;margin-top:4px;">
+            <button class="btn btn-primary" id="playAgainBtn" style="flex:1;">Play Again</button>
+            <button class="btn btn-secondary" id="menuBtn" style="flex:1;">Menu</button>
+        </div>
     </div>
 </div>
 
@@ -896,6 +899,7 @@ const dom = {
     winnerSub: $('winnerSub'),
     prizeCode: $('prizeCode'),
     playAgainBtn: $('playAgainBtn'),
+    menuBtn: $('menuBtn'),
     timerDisplay: $('timerDisplay'),
     statsBar: $('statsBar'),
     statP1: $('statP1'),
@@ -1575,6 +1579,9 @@ function showWinner(player) {
     }
     const codes = ['SEA-WARRIOR-2024', 'HIDE-SEEK-CHAMP', 'FLEET-COMMANDER', 'BATTLE-READY', 'OCEAN-LORD'];
     dom.prizeCode.textContent = codes[Math.floor(Math.random() * codes.length)];
+    dom.playAgainBtn.textContent = 'Play Again';
+    dom.playAgainBtn.disabled = false;
+    dom._acceptRematch = false;
     dom.winnerOverlay.classList.add('active');
 }
 
@@ -1761,6 +1768,22 @@ function handleServerMessage(msg) {
                 dom.onlineWaiting.style.display = 'block';
             } else if (G.phase === 'play' || G.phase === 'gameover') {
                 dom.statusText.textContent = '⚠️ Opponent disconnected!';
+            }
+            break;
+        case 'rematch_status':
+            if (msg.wants[0] || msg.wants[1]) {
+                if (msg.wants[G.myIndex]) {
+                    dom.playAgainBtn.textContent = '⏳ Waiting...';
+                    dom.playAgainBtn.disabled = true;
+                } else {
+                    dom.playAgainBtn.textContent = '✅ Accept Rematch';
+                    dom.playAgainBtn.disabled = false;
+                    dom._acceptRematch = true;
+                }
+            } else {
+                dom.playAgainBtn.textContent = 'Play Again';
+                dom.playAgainBtn.disabled = false;
+                dom._acceptRematch = false;
             }
             break;
         case 'rematch_accepted':
@@ -1991,10 +2014,18 @@ dom.roomCodeInput.addEventListener('keydown', function(e) {
 
 dom.playAgainBtn.addEventListener('click', function() {
     if (G.mode === 'online' && G.ws && G.ws.readyState === WebSocket.OPEN) {
-        G.ws.send(JSON.stringify({ type: 'rematch' }));
+        G.ws.send(JSON.stringify({ type: 'rematch_request' }));
+        dom.playAgainBtn.textContent = '⏳ Waiting...';
+        dom.playAgainBtn.disabled = true;
+        dom._acceptRematch = false;
     } else {
         initGame();
     }
+});
+
+dom.menuBtn.addEventListener('click', function() {
+    if (G.ws) { try { G.ws.close(); } catch(e) {} G.ws = null; }
+    initGame();
 });
 
 dom.soundToggle.addEventListener('click', soundToggle);
