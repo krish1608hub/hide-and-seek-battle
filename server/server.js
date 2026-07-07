@@ -69,6 +69,7 @@ wss.on('connection', (ws) => {
           shots: [{}, {}],
           ready: [false, false],
           playerNames: ['', ''],
+          stats: [{ hits: 0, misses: 0, shots: 0 }, { hits: 0, misses: 0, shots: 0 }],
           turn: 0,
           phase: 'waiting',
           winner: null,
@@ -146,6 +147,14 @@ wss.on('connection', (ws) => {
           if (hit) break;
         }
 
+        const astats = room.stats[player.index];
+        astats.shots++;
+        if (hit) {
+          astats.hits++;
+        } else {
+          astats.misses++;
+        }
+
         const allSunk = ships.every(s => s.hits >= s.size);
         let gameOver = false;
 
@@ -169,6 +178,7 @@ wss.on('connection', (ws) => {
           winner: gameOver ? player.index : undefined,
           turn: room.turn,
           attacker: player.index,
+          attackerStats: room.stats[player.index],
         };
 
         room.players.forEach(p => send(p, result));
@@ -190,6 +200,7 @@ wss.on('connection', (ws) => {
         room.ships = [null, null];
         room.shots = [{}, {}];
         room.ready = [false, false];
+        room.stats = [{ hits: 0, misses: 0, shots: 0 }, { hits: 0, misses: 0, shots: 0 }];
         room.turn = 0;
         room.winner = null;
         room.players.forEach(p => send(p, { type: 'rematch_accepted' }));

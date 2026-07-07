@@ -1788,16 +1788,16 @@ function handleOnlineFireResult(msg) {
     var isAttacker = msg.attacker === G.myIndex;
     var me = G.myIndex;
 
+    // Sync attacker's stats from server so both clients see the same numbers
+    G.players[msg.attacker].stats = msg.attackerStats;
+
     if (isAttacker) {
-        // I fired the shot — update my view of the enemy board and my stats
-        G.players[me].stats.shots++;
+        // I fired the shot — update my view of the enemy board
         var ev = G.players[me].enemyView;
         if (msg.hit) {
             ev[msg.row][msg.col] = 2;
-            G.players[me].stats.hits++;
         } else {
             ev[msg.row][msg.col] = 3;
-            G.players[me].stats.misses++;
         }
         if (msg.sunk && msg.shipCells) {
             for (var i = 0; i < msg.shipCells.length; i++) {
