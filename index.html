@@ -1245,33 +1245,39 @@ function renderBoard(pIdx, container, isOwn) {
         const col = c0.c + 1;
 
         if (ship.sinking) {
-            // Break ship into 2 halves that sink separately
-            const mid = Math.floor(ship.size / 2);
-            const halves = [
-                { start: 0, end: mid - 1, size: mid, side: 'left' },
-                { start: mid, end: ship.size - 1, size: ship.size - mid, side: 'right' }
-            ];
-            for (const h of halves) {
-                if (h.size <= 0) continue;
-                const sc = ship.cells[h.start];
-                const ec = ship.cells[h.end];
-                const hr = sc.r + 1;
-                const hc = sc.c + 1;
-                const pEl = document.createElement('div');
-                pEl.className = `ship-piece ${h.side}`;
-                pEl.style.backgroundImage = `url('assets/${shipAssets[si]}${horiz ? '' : '-v'}.svg')`;
-                if (horiz) {
-                    pEl.style.gridRow = `${hr} / span 1`;
-                    pEl.style.gridColumn = `${hc} / span ${h.size}`;
-                    pEl.style.backgroundSize = `${(ship.size / h.size) * 100}% 100%`;
-                    pEl.style.backgroundPosition = h.start === 0 ? '0% 0' : '100% 0';
-                } else {
-                    pEl.style.gridRow = `${hr} / span ${h.size}`;
-                    pEl.style.gridColumn = `${hc} / span 1`;
-                    pEl.style.backgroundSize = `100% ${(ship.size / h.size) * 100}%`;
-                    pEl.style.backgroundPosition = h.start === 0 ? '0 0%' : '0 100%';
+            // Reuse existing DOM elements to avoid restarting CSS animation on re-render
+            if (!ship._sinkEls) {
+                ship._sinkEls = [];
+                const mid = Math.floor(ship.size / 2);
+                const halves = [
+                    { start: 0, end: mid - 1, size: mid, side: 'left' },
+                    { start: mid, end: ship.size - 1, size: ship.size - mid, side: 'right' }
+                ];
+                for (const h of halves) {
+                    if (h.size <= 0) continue;
+                    const sc = ship.cells[h.start];
+                    const ec = ship.cells[h.end];
+                    const hr = sc.r + 1;
+                    const hc = sc.c + 1;
+                    const pEl = document.createElement('div');
+                    pEl.className = `ship-piece ${h.side}`;
+                    pEl.style.backgroundImage = `url('assets/${shipAssets[si]}${horiz ? '' : '-v'}.svg')`;
+                    if (horiz) {
+                        pEl.style.gridRow = `${hr} / span 1`;
+                        pEl.style.gridColumn = `${hc} / span ${h.size}`;
+                        pEl.style.backgroundSize = `${(ship.size / h.size) * 100}% 100%`;
+                        pEl.style.backgroundPosition = h.start === 0 ? '0% 0' : '100% 0';
+                    } else {
+                        pEl.style.gridRow = `${hr} / span ${h.size}`;
+                        pEl.style.gridColumn = `${hc} / span 1`;
+                        pEl.style.backgroundSize = `100% ${(ship.size / h.size) * 100}%`;
+                        pEl.style.backgroundPosition = h.start === 0 ? '0 0%' : '0 100%';
+                    }
+                    ship._sinkEls.push(pEl);
                 }
-                overlaysEl.appendChild(pEl);
+            }
+            for (var ei = 0; ei < ship._sinkEls.length; ei++) {
+                overlaysEl.appendChild(ship._sinkEls[ei]);
             }
         } else if (ship.sunk) {
             const el = document.createElement('div');
@@ -1571,7 +1577,7 @@ function onFireClick(pIdx, row, col) {
                     if (ship.hits >= ship.size) {
                         ship.sunk = true;
                         ship.sinking = true;
-                        setTimeout(() => { ship.sinking = false; }, 4000);
+                        setTimeout(() => { ship.sinking = false; delete ship._sinkEls; }, 4000);
                         markShipSunk(pIdx, ship);
                         soundSunk();
                         sunk = true;
@@ -1967,7 +1973,7 @@ function handleOnlineFireResult(msg) {
                 sunk: true,
                 sinking: true,
             };
-            setTimeout(function() { G.players[opponent].ships[msg.shipIdx].sinking = false; render(); }, 4000);
+            setTimeout(function() { var s2 = G.players[opponent].ships[msg.shipIdx]; if (s2) { s2.sinking = false; delete s2._sinkEls; render(); } }, 4000);
             soundSunk();
         }
     } else {
@@ -1981,7 +1987,7 @@ function handleOnlineFireResult(msg) {
                 if (msg.sunk) {
                     ship.sunk = true;
                     ship.sinking = true;
-                    setTimeout(function() { ship.sinking = false; }, 4000);
+                    setTimeout(function() { ship.sinking = false; delete ship._sinkEls; }, 4000);
                     markShipSunk(me, ship);
                 }
             }

@@ -234,6 +234,7 @@ wss.on('connection', (ws) => {
           gameOver = true;
           room.phase = 'gameover';
           room.winner = player.index;
+          room.wins[player.index]++;
         } else if (!hit) {
           room.turn = target;
         }
@@ -257,7 +258,6 @@ wss.on('connection', (ws) => {
         room.players.forEach(p => send(p, result));
 
         if (gameOver) {
-          room.wins[player.index]++;
           room.players.forEach(p => send(p, {
             type: 'game_over',
             winner: player.index,
