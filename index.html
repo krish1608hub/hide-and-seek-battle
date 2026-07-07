@@ -732,9 +732,9 @@ body::before {
 <div class="overlay" id="disconnectOverlay">
     <div class="overlay-content" style="max-width:360px;">
         <h2>🔌 Connection Lost</h2>
-        <p id="disconnectMsg" style="margin:12px 0;opacity:0.7;">Opponent disconnected. Waiting for reconnection...</p>
+        <p id="disconnectMsg" style="margin:12px 0;opacity:0.7;">Opponent disconnected. Waiting for them to rejoin...</p>
         <p style="font-size:0.9rem;opacity:0.5;">Room Code: <strong id="disconnectRoomCode" style="color:#ffd54f;">----</strong></p>
-        <p style="font-size:0.75rem;opacity:0.3;">Share this code with your opponent to rejoin.</p>
+        <p style="font-size:0.75rem;opacity:0.3;">Your opponent can rejoin using this code. Game will resume automatically.</p>
         <button class="btn btn-secondary" id="disconnectMenuBtn" style="margin-top:12px;">Back to Menu</button>
     </div>
 </div>
@@ -1841,7 +1841,7 @@ function handleServerMessage(msg) {
         case 'opponent_disconnected':
             var isPlacing = G.phase === 'p1-place' || G.phase === 'p2-place' || G.phase === 'waiting';
             if (isPlacing) {
-                dom.waitingMsg.textContent = 'Opponent disconnected!';
+                dom.waitingMsg.innerHTML = 'Opponent disconnected!<br><small style="opacity:0.5;">They can rejoin using code: <strong style="color:#ffd54f;">' + (msg.roomCode || G.roomCode || '----') + '</strong></small>';
                 dom.onlineOverlay.classList.add('active');
                 dom.onlineMain.style.display = 'none';
                 dom.onlineJoin.style.display = 'none';
