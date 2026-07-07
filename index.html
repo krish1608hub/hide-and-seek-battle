@@ -964,7 +964,46 @@ function initGame() {
     dom.onlineOverlay.classList.remove('active');
     dom.viewBtn.classList.remove('active');
     render();
-    dom.modeOverlay.classList.add('active');
+    if (G.mode !== 'online') dom.modeOverlay.classList.add('active');
+}
+
+function rematchGame() {
+    const ws = G.ws;
+    const mode = G.mode;
+    const myIndex = G.myIndex;
+    const roomCode = G.roomCode;
+    const serverUrl = G.serverUrl;
+    const names = G.playerNames.slice();
+    G = {
+        mode: mode,
+        phase: 'menu',
+        turn: 1,
+        horizontal: true,
+        shipIdx: 0,
+        playerNames: names,
+        players: [
+            { grid: createInitGrid(), enemyView: createInitGrid(), ships: [], placed: false, stats: { hits: 0, misses: 0, shots: 0 } },
+            { grid: createInitGrid(), enemyView: createInitGrid(), ships: [], placed: false, stats: { hits: 0, misses: 0, shots: 0 } },
+        ],
+        view: 'auto',
+        timer: { remaining: 30, interval: null, active: false },
+        ws: ws,
+        myIndex: myIndex,
+        roomCode: roomCode,
+        serverUrl: serverUrl,
+    };
+    stopTimer();
+    dom.winnerOverlay.classList.remove('active');
+    dom.overlay.classList.remove('active');
+    dom.nameOverlay.classList.remove('active');
+    dom.onlineOverlay.classList.remove('active');
+    dom.viewBtn.classList.remove('active');
+    render();
+    dom.modeOverlay.classList.remove('active');
+    G.phase = G.myIndex === 0 ? 'p1-place' : 'p2-place';
+    G.shipIdx = 0;
+    render();
+    showPlacementOverlay(G.myIndex + 1);
 }
 
 function promptPlayer(pIdx, onDone, showInput) {
@@ -1510,23 +1549,33 @@ function showPlacementOverlay(player) {
 
 function showWinner(player) {
     const wi = player - 1;
-    dom.trophyIcon.textContent = '🏆';
-    dom.winnerTitle.textContent = `${pn(wi)} Wins!`;
-    const winner = G.players[wi];
-    const loser = G.players[wi === 0 ? 1 : 0];
-    var subText;
-    if (G.mode === 'online') {
-        const ws = winner.stats;
-        subText = 'All enemy ships destroyed!<br><small style="opacity:0.5;font-size:0.75rem;">Accuracy: ' + (ws.shots > 0 ? Math.round(ws.hits/ws.shots*100) : 0) + '%</small>';
-    } else {
-        const ws = winner.stats, ls = loser.stats;
-        subText = 'All enemy ships destroyed!<br><small style="opacity:0.5;font-size:0.75rem;">Winner: ' + ws.hits + '/' + ws.shots + ' hits (' + (ws.shots > 0 ? Math.round(ws.hits/ws.shots*100) : 0) + '% accuracy) · ' + ls.hits + ' hits taken</small>';
+    var isVictory = true;
+    if (G.mode === 'online' && G.myIndex != null) {
+        isVictory = (player - 1) === G.myIndex;
     }
-    dom.winnerSub.innerHTML = subText;
+    if (isVictory) {
+        dom.trophyIcon.textContent = '🏆';
+        dom.winnerTitle.textContent = `${pn(wi)} Wins!`;
+        const winner = G.players[wi];
+        const loser = G.players[wi === 0 ? 1 : 0];
+        var subText;
+        if (G.mode === 'online') {
+            const ws = winner.stats;
+            subText = 'All enemy ships destroyed!<br><small style="opacity:0.5;font-size:0.75rem;">Accuracy: ' + (ws.shots > 0 ? Math.round(ws.hits/ws.shots*100) : 0) + '%</small>';
+        } else {
+            const ws = winner.stats, ls = loser.stats;
+            subText = 'All enemy ships destroyed!<br><small style="opacity:0.5;font-size:0.75rem;">Winner: ' + ws.hits + '/' + ws.shots + ' hits (' + (ws.shots > 0 ? Math.round(ws.hits/ws.shots*100) : 0) + '% accuracy) · ' + ls.hits + ' hits taken</small>';
+        }
+        dom.winnerSub.innerHTML = subText;
+        spawnConfetti();
+    } else {
+        dom.trophyIcon.textContent = '💀';
+        dom.winnerTitle.textContent = 'Game Over';
+        dom.winnerSub.innerHTML = 'Your fleet was destroyed!<br><small style="opacity:0.5;font-size:0.75rem;">Better luck next time.</small>';
+    }
     const codes = ['SEA-WARRIOR-2024', 'HIDE-SEEK-CHAMP', 'FLEET-COMMANDER', 'BATTLE-READY', 'OCEAN-LORD'];
     dom.prizeCode.textContent = codes[Math.floor(Math.random() * codes.length)];
     dom.winnerOverlay.classList.add('active');
-    spawnConfetti();
 }
 
 function spawnConfetti() {
@@ -1715,7 +1764,7 @@ function handleServerMessage(msg) {
             }
             break;
         case 'rematch_accepted':
-            initGame();
+            rematchGame();
             break;
         case 'error':
             console.error('Server error:', msg.message);
@@ -1940,7 +1989,13 @@ dom.roomCodeInput.addEventListener('keydown', function(e) {
     if (e.key === 'Enter') dom.joinConfirmBtn.click();
 });
 
-dom.playAgainBtn.addEventListener('click', initGame);
+dom.playAgainBtn.addEventListener('click', function() {
+    if (G.mode === 'online' && G.ws && G.ws.readyState === WebSocket.OPEN) {
+        G.ws.send(JSON.stringify({ type: 'rematch' }));
+    } else {
+        initGame();
+    }
+});
 
 dom.soundToggle.addEventListener('click', soundToggle);
 // Init sound toggle state
