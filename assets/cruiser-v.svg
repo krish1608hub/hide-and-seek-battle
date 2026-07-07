@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 300">
+  <g transform="translate(100, 0) rotate(90)">
+    <defs>
+      <linearGradient id="hull" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#5d4037"/><stop offset="40%" stop-color="#4e342e"/><stop offset="100%" stop-color="#2c1a12"/></linearGradient>
+      <linearGradient id="deck" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#8d6e63"/><stop offset="100%" stop-color="#5d4037"/></linearGradient>
+      <linearGradient id="sail1" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#fff9c4"/><stop offset="100%" stop-color="#fff176"/></linearGradient>
+      <linearGradient id="sail2" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#ffffff"/><stop offset="100%" stop-color="#e0e0e0"/></linearGradient>
+    </defs>
+    <path d="M20 56 Q50 52 150 52 Q250 52 280 56 L280 44 Q250 42 150 42 Q50 42 20 44 Z" fill="url(#hull)"/>
+    <rect x="18" y="36" width="264" height="8" rx="2" fill="url(#deck)"/>
+    <rect x="18" y="44" width="264" height="2" fill="#1a0a0a" opacity="0.5"/>
+    <path d="M165 8 L165 44" stroke="#5d4037" stroke-width="4" stroke-linecap="round"/>
+    <path d="M165 12 L55 40 L165 36 Z" fill="url(#sail1)" stroke="#f9a825" stroke-width="0.6" opacity="0.95"/>
+    <path d="M165 18 L240 42 L165 38 Z" fill="url(#sail2)" stroke="#e0e0e0" stroke-width="0.5" opacity="0.9"/>
+    <path d="M165 24 L85 41 L165 38 Z" fill="url(#sail1)" stroke="#f9a825" stroke-width="0.4" opacity="0.7"/>
+    <circle cx="165" cy="6" r="2.5" fill="#ef5350"/>
+    <rect x="160" y="44" width="10" height="4" rx="1" fill="#4e342e"/>
+    <path d="M165 48 L175 56" stroke="#5d4037" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M165 48 L155 56" stroke="#5d4037" stroke-width="1.5" stroke-linecap="round"/>
+    <rect x="40" y="44" width="10" height="4" rx="0.5" fill="#3e2723"/>
+    <rect x="80" y="44" width="10" height="4" rx="0.5" fill="#3e2723"/>
+    <rect x="200" y="44" width="10" height="4" rx="0.5" fill="#3e2723"/>
+    <rect x="240" y="44" width="10" height="4" rx="0.5" fill="#3e2723"/>
+    <rect x="25" y="44" width="5" height="8" rx="0.3" fill="#2c1a12"/>
+    <rect x="270" y="44" width="5" height="8" rx="0.3" fill="#2c1a12"/>
+    <circle cx="45" cy="40" r="0.8" fill="#ffca28" opacity="0.5"/>
+    <circle cx="100" cy="40" r="0.8" fill="#ffca28" opacity="0.5"/>
+    <circle cx="190" cy="40" r="0.8" fill="#ffca28" opacity="0.5"/>
+    <circle cx="250" cy="40" r="0.8" fill="#ffca28" opacity="0.5"/>
+    <path d="M14 54 Q40 51 80 54 Q130 57 180 54 Q230 51 270 54 Q285 55 290 54" fill="none" stroke="#4fc3f7" stroke-width="0.8" opacity="0.2"/>
+  </g>
+</svg>

@@ -1,0 +1,12 @@
+{
+  "name": "sea-battle-server",
+  "version": "1.0.0",
+  "description": "Sea Battle Hide & Seek - Online multiplayer server",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "ws": "^8.16.0"
+  }
+}

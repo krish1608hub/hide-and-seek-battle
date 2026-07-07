@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 200">
+  <g transform="translate(100, 0) rotate(90)">
+    <defs>
+      <linearGradient id="hull" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#5a7a8a"/><stop offset="35%" stop-color="#3a5a6a"/><stop offset="100%" stop-color="#1a2a3a"/></linearGradient>
+      <linearGradient id="deck" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#8a9aa4"/><stop offset="100%" stop-color="#5a6a74"/></linearGradient>
+      <linearGradient id="tower" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#6a7a84"/><stop offset="100%" stop-color="#2a3a44"/></linearGradient>
+      <radialGradient id="radar" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#4fc3f7"/><stop offset="100%" stop-color="#01579b"/></radialGradient>
+    </defs>
+    <path d="M20 56 Q50 52 100 52 Q150 52 180 56 L180 44 Q150 42 100 42 Q50 42 20 44 Z" fill="url(#hull)"/>
+    <rect x="18" y="36" width="164" height="8" rx="1" fill="url(#deck)"/>
+    <rect x="18" y="44" width="164" height="2" fill="#2a1a1a" opacity="0.5"/>
+    <rect x="80" y="22" width="36" height="16" rx="2" fill="url(#tower)"/>
+    <rect x="88" y="14" width="20" height="10" rx="1.5" fill="#5a7a8a"/>
+    <rect x="94" y="8" width="8" height="7" rx="1" fill="#6a8a9a"/>
+    <ellipse cx="98" cy="6" rx="6" ry="3" fill="url(#radar)" opacity="0.8"/>
+    <line x1="98" y1="6" x2="98" y2="3" stroke="#4fc3f7" stroke-width="1" opacity="0.6"/>
+    <rect x="30" y="44" width="8" height="4" rx="0.5" fill="#3a4a54"/>
+    <rect x="50" y="44" width="8" height="4" rx="0.5" fill="#3a4a54"/>
+    <rect x="130" y="44" width="8" height="4" rx="0.5" fill="#3a4a54"/>
+    <rect x="150" y="44" width="8" height="4" rx="0.5" fill="#3a4a54"/>
+    <rect x="170" y="44" width="8" height="4" rx="0.5" fill="#3a4a54"/>
+    <rect x="32" y="50" width="5" height="6" rx="0.5" fill="#3a4a54"/>
+    <rect x="55" y="50" width="5" height="6" rx="0.5" fill="#3a4a54"/>
+    <rect x="130" y="50" width="5" height="6" rx="0.5" fill="#3a4a54"/>
+    <rect x="150" y="50" width="5" height="6" rx="0.5" fill="#3a4a54"/>
+    <rect x="170" y="50" width="5" height="6" rx="0.5" fill="#3a4a54"/>
+    <rect x="44" y="44" width="10" height="4" rx="0.5" fill="#4a5a64"/>
+    <rect x="125" y="44" width="10" height="4" rx="0.5" fill="#4a5a64"/>
+    <circle cx="40" cy="40" r="0.8" fill="#4fc3f7" opacity="0.5"/>
+    <circle cx="70" cy="40" r="0.8" fill="#4fc3f7" opacity="0.5"/>
+    <circle cx="125" cy="40" r="0.8" fill="#4fc3f7" opacity="0.5"/>
+    <circle cx="160" cy="40" r="0.8" fill="#4fc3f7" opacity="0.5"/>
+    <path d="M14 54 Q40 51 70 54 Q105 57 140 54 Q170 51 186 54" fill="none" stroke="#4fc3f7" stroke-width="0.8" opacity="0.2"/>
+  </g>
+</svg>
