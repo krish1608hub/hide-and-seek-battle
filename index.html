@@ -753,12 +753,7 @@ body::before {
         <div class="trophy" id="trophyIcon">🏆</div>
         <h2 id="winnerTitle" style="background:linear-gradient(135deg,#ffd54f,#ffb300);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">Player 1 Wins!</h2>
         <p id="winnerSub" style="color:rgba(255,255,255,0.5);">All enemy ships have been destroyed!</p>
-        <div class="prize-text">
-            <strong>🏅 VICTORY PRIZE</strong><br>
-            <span id="prizeCode" style="font-size:1.2rem;font-weight:700;color:#ffd54f;">SEA-WARRIOR-2024</span><br>
-            <small style="opacity:0.5;">You are the master of the seas!</small>
-        </div>
-        <div id="rematchBtns" style="display:flex;gap:8px;justify-content:center;margin-top:4px;">
+        <div id="rematchBtns" style="display:flex;gap:8px;justify-content:center;margin-top:12px;">
             <button class="btn btn-primary" id="playAgainBtn" style="flex:1;">Play Again</button>
             <button class="btn btn-secondary" id="menuBtn" style="flex:1;">Menu</button>
         </div>
@@ -908,7 +903,7 @@ const dom = {
     trophyIcon: $('trophyIcon'),
     winnerTitle: $('winnerTitle'),
     winnerSub: $('winnerSub'),
-    prizeCode: $('prizeCode'),
+
     playAgainBtn: $('playAgainBtn'),
     menuBtn: $('menuBtn'),
     roomCodeBar: $('roomCodeBar'),
@@ -1170,7 +1165,7 @@ function render() {
     renderBoard(pIdx, dom.board, isOwn);
     renderUI();
     updateViewBtn();
-    if (G.mode === 'online' && G.roomCode && (G.phase === 'play' || G.phase === 'gameover' || G.phase === 'waiting')) {
+    if (G.mode === 'online' && G.roomCode && (G.phase === 'play' || G.phase === 'gameover' || G.phase === 'waiting' || G.phase === 'p1-place' || G.phase === 'p2-place')) {
         dom.roomCodeBar.style.display = 'block';
         dom.roomCodeDisplay2.textContent = G.roomCode;
         var w = G.roomWins || [0, 0];
@@ -1656,8 +1651,6 @@ function showWinner(player) {
         dom.winnerTitle.textContent = 'Game Over';
         dom.winnerSub.innerHTML = 'Your fleet was destroyed!<br><small style="opacity:0.5;font-size:0.75rem;">Better luck next time.</small><br>' + seriesScore;
     }
-    const codes = ['SEA-WARRIOR-2024', 'HIDE-SEEK-CHAMP', 'FLEET-COMMANDER', 'BATTLE-READY', 'OCEAN-LORD'];
-    dom.prizeCode.textContent = codes[Math.floor(Math.random() * codes.length)];
     dom.playAgainBtn.textContent = 'Play Again';
     dom.playAgainBtn.disabled = false;
     dom._acceptRematch = false;
