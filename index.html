@@ -726,7 +726,7 @@ body::before {
         <button class="view-btn" id="viewBtn">👁 View My Fleet</button>
         <button class="sound-toggle" id="soundToggle">🔊</button>
     </div>
-    <div class="room-code-bar" id="roomCodeBar" style="display:none;text-align:center;font-size:0.7rem;opacity:0.4;padding:4px;">Room: <span id="roomCodeDisplay2">----</span></div>
+    <div class="room-code-bar" id="roomCodeBar" style="display:none;text-align:center;font-size:0.7rem;opacity:0.4;padding:4px;">Room: <span id="roomCodeDisplay2">----</span> <span id="winDisplay" style="margin-left:12px;"></span></div>
 </div>
 
 <div class="overlay" id="disconnectOverlay">
@@ -913,6 +913,7 @@ const dom = {
     menuBtn: $('menuBtn'),
     roomCodeBar: $('roomCodeBar'),
     roomCodeDisplay2: $('roomCodeDisplay2'),
+    winDisplay: $('winDisplay'),
     disconnectOverlay: $('disconnectOverlay'),
     disconnectMsg: $('disconnectMsg'),
     disconnectRoomCode: $('disconnectRoomCode'),
@@ -976,6 +977,7 @@ function initGame() {
         ws: null,
         myIndex: 0,
         roomCode: null,
+        roomWins: [0, 0],
         serverUrl: (window.location.protocol === 'https:' ? 'wss://' : 'ws://') + window.location.host,
     };
     stopTimer();
@@ -995,6 +997,7 @@ function rematchGame() {
     const roomCode = G.roomCode;
     const serverUrl = G.serverUrl;
     const names = G.playerNames.slice();
+    const roomWins = G.roomWins || [0, 0];
     G = {
         mode: mode,
         phase: 'menu',
@@ -1011,6 +1014,7 @@ function rematchGame() {
         ws: ws,
         myIndex: myIndex,
         roomCode: roomCode,
+        roomWins: roomWins,
         serverUrl: serverUrl,
     };
     stopTimer();
@@ -1054,6 +1058,7 @@ function applyReconnectInfo(msg) {
             G.players[oi].ships.push({ cells: [], size: s.size, hits: s.sunk ? s.size : 0, sunk: s.sunk });
         }
     }
+    if (msg.wins) G.roomWins = msg.wins;
     G.phase = msg.phase;
     G.turn = msg.turn + 1;
     if (msg.phase === 'gameover') G.winner = msg.winner !== undefined ? msg.winner + 1 : G.turn;
@@ -1164,6 +1169,8 @@ function render() {
     if (G.mode === 'online' && G.roomCode && (G.phase === 'play' || G.phase === 'gameover' || G.phase === 'waiting')) {
         dom.roomCodeBar.style.display = 'block';
         dom.roomCodeDisplay2.textContent = G.roomCode;
+        var w = G.roomWins || [0, 0];
+        dom.winDisplay.textContent = pn(0) + ': ' + w[0] + '  |  ' + pn(1) + ': ' + w[1];
     } else {
         dom.roomCodeBar.style.display = 'none';
     }
@@ -1623,6 +1630,8 @@ function showWinner(player) {
     if (G.mode === 'online' && G.myIndex != null) {
         isVictory = (player - 1) === G.myIndex;
     }
+    const w = G.roomWins || [0, 0];
+    var seriesScore = '<small style="opacity:0.4;font-size:0.65rem;">Series: ' + pn(0) + ' ' + w[0] + ' - ' + w[1] + ' ' + pn(1) + '</small>';
     if (isVictory) {
         dom.trophyIcon.textContent = '🏆';
         dom.winnerTitle.textContent = `${pn(wi)} Wins!`;
@@ -1631,17 +1640,17 @@ function showWinner(player) {
         var subText;
         if (G.mode === 'online') {
             const ws = winner.stats;
-            subText = 'All enemy ships destroyed!<br><small style="opacity:0.5;font-size:0.75rem;">Accuracy: ' + (ws.shots > 0 ? Math.round(ws.hits/ws.shots*100) : 0) + '%</small>';
+            subText = 'All enemy ships destroyed!<br><small style="opacity:0.5;font-size:0.75rem;">Accuracy: ' + (ws.shots > 0 ? Math.round(ws.hits/ws.shots*100) : 0) + '%</small><br>' + seriesScore;
         } else {
             const ws = winner.stats, ls = loser.stats;
-            subText = 'All enemy ships destroyed!<br><small style="opacity:0.5;font-size:0.75rem;">Winner: ' + ws.hits + '/' + ws.shots + ' hits (' + (ws.shots > 0 ? Math.round(ws.hits/ws.shots*100) : 0) + '% accuracy) · ' + ls.hits + ' hits taken</small>';
+            subText = 'All enemy ships destroyed!<br><small style="opacity:0.5;font-size:0.75rem;">Winner: ' + ws.hits + '/' + ws.shots + ' hits (' + (ws.shots > 0 ? Math.round(ws.hits/ws.shots*100) : 0) + '% accuracy) · ' + ls.hits + ' hits taken</small><br>' + seriesScore;
         }
         dom.winnerSub.innerHTML = subText;
         spawnConfetti();
     } else {
         dom.trophyIcon.textContent = '💀';
         dom.winnerTitle.textContent = 'Game Over';
-        dom.winnerSub.innerHTML = 'Your fleet was destroyed!<br><small style="opacity:0.5;font-size:0.75rem;">Better luck next time.</small>';
+        dom.winnerSub.innerHTML = 'Your fleet was destroyed!<br><small style="opacity:0.5;font-size:0.75rem;">Better luck next time.</small><br>' + seriesScore;
     }
     const codes = ['SEA-WARRIOR-2024', 'HIDE-SEEK-CHAMP', 'FLEET-COMMANDER', 'BATTLE-READY', 'OCEAN-LORD'];
     dom.prizeCode.textContent = codes[Math.floor(Math.random() * codes.length)];
@@ -1815,6 +1824,7 @@ function handleServerMessage(msg) {
             break;
         case 'game_over':
             if (G.phase === 'gameover') break;
+            if (msg.wins) G.roomWins = msg.wins;
             dom.overlay.classList.remove('active');
             G.phase = 'gameover';
             G.winner = msg.winner !== undefined ? msg.winner + 1 : (G.turn);
@@ -1986,6 +1996,7 @@ function handleOnlineFireResult(msg) {
     G.turn = msg.turn + 1;
 
     if (msg.gameOver) {
+        if (msg.wins) G.roomWins = msg.wins;
         G.phase = 'gameover';
         G.winner = msg.winner !== undefined ? msg.winner + 1 : G.turn;
         stopTimer();

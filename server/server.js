@@ -70,6 +70,7 @@ wss.on('connection', (ws) => {
           ready: [false, false],
           playerNames: ['', ''],
           stats: [{ hits: 0, misses: 0, shots: 0 }, { hits: 0, misses: 0, shots: 0 }],
+          wins: [0, 0],
           rematch: [false, false],
           disconnected: [false, false],
           turn: 0,
@@ -153,6 +154,7 @@ wss.on('connection', (ws) => {
             enemyView: makeEnemyView(r.shots[reconnIdx], r.ships[opp]),
             myShips: (r.ships[reconnIdx] || []).map(s => ({ cells: s.cells, size: s.size, hits: s.hits })),
             opponentSunkShips: oppSunk,
+            wins: r.wins,
           };
           send(ws, state);
           broadcast(r, { type: 'opponent_reconnected' }, ws);
@@ -249,15 +251,18 @@ wss.on('connection', (ws) => {
           turn: room.turn,
           attacker: player.index,
           attackerStats: room.stats[player.index],
+          wins: gameOver ? room.wins : undefined,
         };
 
         room.players.forEach(p => send(p, result));
 
         if (gameOver) {
+          room.wins[player.index]++;
           room.players.forEach(p => send(p, {
             type: 'game_over',
             winner: player.index,
             winnerName: msg.playerName || '',
+            wins: room.wins,
           }));
         }
         break;
