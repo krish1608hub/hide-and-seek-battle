@@ -726,6 +726,17 @@ body::before {
         <button class="view-btn" id="viewBtn">👁 View My Fleet</button>
         <button class="sound-toggle" id="soundToggle">🔊</button>
     </div>
+    <div class="room-code-bar" id="roomCodeBar" style="display:none;text-align:center;font-size:0.7rem;opacity:0.4;padding:4px;">Room: <span id="roomCodeDisplay2">----</span></div>
+</div>
+
+<div class="overlay" id="disconnectOverlay">
+    <div class="overlay-content" style="max-width:360px;">
+        <h2>🔌 Connection Lost</h2>
+        <p id="disconnectMsg" style="margin:12px 0;opacity:0.7;">Opponent disconnected. Waiting for reconnection...</p>
+        <p style="font-size:0.9rem;opacity:0.5;">Room Code: <strong id="disconnectRoomCode" style="color:#ffd54f;">----</strong></p>
+        <p style="font-size:0.75rem;opacity:0.3;">Share this code with your opponent to rejoin.</p>
+        <button class="btn btn-secondary" id="disconnectMenuBtn" style="margin-top:12px;">Back to Menu</button>
+    </div>
 </div>
 
 <div class="overlay" id="overlay">
@@ -900,6 +911,12 @@ const dom = {
     prizeCode: $('prizeCode'),
     playAgainBtn: $('playAgainBtn'),
     menuBtn: $('menuBtn'),
+    roomCodeBar: $('roomCodeBar'),
+    roomCodeDisplay2: $('roomCodeDisplay2'),
+    disconnectOverlay: $('disconnectOverlay'),
+    disconnectMsg: $('disconnectMsg'),
+    disconnectRoomCode: $('disconnectRoomCode'),
+    disconnectMenuBtn: $('disconnectMenuBtn'),
     timerDisplay: $('timerDisplay'),
     statsBar: $('statsBar'),
     statP1: $('statP1'),
@@ -1010,6 +1027,45 @@ function rematchGame() {
     showPlacementOverlay(G.myIndex + 1);
 }
 
+function applyReconnectInfo(msg) {
+    dom.winnerOverlay.classList.remove('active');
+    dom.disconnectOverlay.classList.remove('active');
+    dom.overlay.classList.remove('active');
+    dom.onlineOverlay.classList.remove('active');
+    G.myIndex = msg.playerIndex;
+    G.playerNames = msg.playerNames;
+    G.players[0].stats = msg.stats[0];
+    G.players[1].stats = msg.stats[1];
+    var mi = msg.playerIndex;
+    var oi = mi === 0 ? 1 : 0;
+    G.players[mi].grid = msg.grid;
+    G.players[mi].enemyView = msg.enemyView;
+    G.players[mi].ships = [];
+    if (msg.myShips) {
+        for (var si = 0; si < msg.myShips.length; si++) {
+            var s = msg.myShips[si];
+            G.players[mi].ships.push({ cells: s.cells, size: s.size, hits: s.hits, sunk: s.hits >= s.size });
+        }
+    }
+    G.players[oi].ships = [];
+    if (msg.opponentSunkShips) {
+        for (var si = 0; si < msg.opponentSunkShips.length; si++) {
+            var s = msg.opponentSunkShips[si];
+            G.players[oi].ships.push({ cells: [], size: s.size, hits: s.sunk ? s.size : 0, sunk: s.sunk });
+        }
+    }
+    G.phase = msg.phase;
+    G.turn = msg.turn + 1;
+    if (msg.phase === 'gameover') G.winner = msg.winner !== undefined ? msg.winner + 1 : G.turn;
+    stopTimer();
+    render();
+    if (msg.phase === 'play') startTimer();
+    if (msg.phase === 'gameover') {
+        soundWin();
+        showWinner(G.winner);
+    }
+}
+
 function promptPlayer(pIdx, onDone, showInput) {
     if (showInput === undefined) showInput = true;
     const badgeClass = pIdx === 0 ? 'p1' : 'p2';
@@ -1105,6 +1161,12 @@ function render() {
     renderBoard(pIdx, dom.board, isOwn);
     renderUI();
     updateViewBtn();
+    if (G.mode === 'online' && G.roomCode && (G.phase === 'play' || G.phase === 'gameover' || G.phase === 'waiting')) {
+        dom.roomCodeBar.style.display = 'block';
+        dom.roomCodeDisplay2.textContent = G.roomCode;
+    } else {
+        dom.roomCodeBar.style.display = 'none';
+    }
     if (G.phase === 'play') { resetTimer(); }
     else { stopTimer(); }
 }
@@ -1771,8 +1833,17 @@ function handleServerMessage(msg) {
                 dom.onlineJoin.style.display = 'none';
                 dom.onlineWaiting.style.display = 'block';
             } else if (G.phase === 'play' || G.phase === 'gameover') {
-                dom.statusText.textContent = '⚠️ Opponent disconnected!';
+                stopTimer();
+                dom.disconnectRoomCode.textContent = msg.roomCode || G.roomCode || '----';
+                dom.disconnectOverlay.classList.add('active');
             }
+            break;
+        case 'opponent_reconnected':
+            dom.disconnectOverlay.classList.remove('active');
+            if (G.phase === 'play') startTimer();
+            break;
+        case 'reconnect_info':
+            applyReconnectInfo(msg);
             break;
         case 'rematch_status':
             if (msg.wants[0] || msg.wants[1]) {
@@ -2029,6 +2100,12 @@ dom.playAgainBtn.addEventListener('click', function() {
 
 dom.menuBtn.addEventListener('click', function() {
     if (G.ws) { try { G.ws.close(); } catch(e) {} G.ws = null; }
+    initGame();
+});
+
+dom.disconnectMenuBtn.addEventListener('click', function() {
+    if (G.ws) { try { G.ws.close(); } catch(e) {} G.ws = null; }
+    dom.disconnectOverlay.classList.remove('active');
     initGame();
 });
 

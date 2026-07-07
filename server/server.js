@@ -71,6 +71,7 @@ wss.on('connection', (ws) => {
           playerNames: ['', ''],
           stats: [{ hits: 0, misses: 0, shots: 0 }, { hits: 0, misses: 0, shots: 0 }],
           rematch: [false, false],
+          disconnected: [false, false],
           turn: 0,
           phase: 'waiting',
           winner: null,
@@ -84,12 +85,80 @@ wss.on('connection', (ws) => {
         if (player) return send(ws, { type: 'error', message: 'Already in a room' });
         const r = rooms[msg.code];
         if (!r) return send(ws, { type: 'error', message: 'Room not found' });
-        if (r.players.length >= 2) return send(ws, { type: 'error', message: 'Room is full' });
-        if (r.phase !== 'waiting') return send(ws, { type: 'error', message: 'Game already started' });
-        r.players.push(ws);
-        player = { code: msg.code, index: 1 };
-        send(ws, { type: 'room_joined', code: msg.code, playerIndex: 1 });
-        broadcast(r, { type: 'opponent_joined' }, ws);
+
+        if (r.phase === 'waiting') {
+          if (r.players.length >= 2) return send(ws, { type: 'error', message: 'Room is full' });
+          r.players.push(ws);
+          player = { code: msg.code, index: 1 };
+          send(ws, { type: 'room_joined', code: msg.code, playerIndex: 1 });
+          broadcast(r, { type: 'opponent_joined' }, ws);
+        } else if (r.disconnected[0] || r.disconnected[1]) {
+          const reconnIdx = r.disconnected[0] ? 0 : 1;
+          r.players.push(ws);
+          r.disconnected[reconnIdx] = false;
+          player = { code: msg.code, index: reconnIdx };
+
+          // Compute full state for rejoining player
+          function makeGrid(ships, opponentShots) {
+            const g = Array.from({length: 8}, () => Array(8).fill(0));
+            if (!ships) return g;
+            for (const s of ships) {
+              for (const c of s.cells) g[c.r][c.c] = 1;
+            }
+            for (const key in (opponentShots || {})) {
+              const [r, col] = key.split(',').map(Number);
+              let hit = false;
+              for (const s of ships) {
+                for (const c of s.cells) {
+                  if (c.r === r && c.c === col) { hit = true; break; }
+                }
+                if (hit) break;
+              }
+              g[r][col] = hit ? 2 : 3;
+            }
+            return g;
+          }
+          function makeEnemyView(myShots, opponentShips) {
+            const g = Array.from({length: 8}, () => Array(8).fill(0));
+            for (const key in (myShots || {})) {
+              const [r, col] = key.split(',').map(Number);
+              let hit = false;
+              if (opponentShips) {
+                for (const s of opponentShips) {
+                  for (const c of s.cells) {
+                    if (c.r === r && c.c === col) { hit = true; break; }
+                  }
+                  if (hit) break;
+                }
+              }
+              g[r][col] = hit ? 2 : 3;
+            }
+            return g;
+          }
+          const opp = reconnIdx === 0 ? 1 : 0;
+          // Build opponent sunk ships for status bar
+          const oppSunk = (r.ships[opp] || []).map(s => ({
+            sunk: s.hits >= s.size,
+            size: s.size,
+          }));
+          const state = {
+            type: 'reconnect_info',
+            playerIndex: reconnIdx,
+            playerNames: r.playerNames,
+            phase: r.phase,
+            turn: r.turn,
+            winner: r.winner,
+            stats: r.stats,
+            grid: makeGrid(r.ships[reconnIdx], r.shots[opp]),
+            enemyView: makeEnemyView(r.shots[reconnIdx], r.ships[opp]),
+            myShips: (r.ships[reconnIdx] || []).map(s => ({ cells: s.cells, size: s.size, hits: s.hits })),
+            opponentSunkShips: oppSunk,
+          };
+          send(ws, state);
+          broadcast(r, { type: 'opponent_reconnected' }, ws);
+        } else {
+          return send(ws, { type: 'error', message: 'Room is full or game already started' });
+        }
         break;
       }
 
@@ -233,9 +302,14 @@ wss.on('connection', (ws) => {
   ws.on('close', () => {
     if (player && rooms[player.code]) {
       const r = rooms[player.code];
-      broadcast(r, { type: 'opponent_disconnected' }, ws);
-      if (r.players.length <= 2) delete rooms[player.code];
-      else r.players = r.players.filter(p => p !== ws);
+      if (r.phase === 'waiting' || r.phase === 'play' || r.phase === 'gameover') {
+        r.disconnected[player.index] = true;
+        r.players = r.players.filter(p => p !== ws);
+        broadcast(r, { type: 'opponent_disconnected', roomCode: player.code }, ws);
+      } else {
+        broadcast(r, { type: 'opponent_left' }, ws);
+        delete rooms[player.code];
+      }
     }
   });
 });
